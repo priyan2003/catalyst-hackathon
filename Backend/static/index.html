@@ -1,0 +1,1334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Catalyst — AI Skill Assessment</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet"/>
+<style>
+/* ── TOKENS ──────────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#09090f;--ink2:#121219;--ink3:#1c1c27;--ink4:#252534;
+  --border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.13);
+  --txt:#e2e2ee;--muted:#7474 90;--muted2:#9494b0;
+  --lime:#c9f135;--lime-d:#a8cc1e;--lime-g:rgba(201,241,53,.13);
+  --teal:#2dd4bf;--coral:#ff6b6b;--amber:#fbbf24;
+  --ff-d:'Syne',sans-serif;--ff-b:'DM Sans',sans-serif;--ff-m:'DM Mono',monospace;
+  --r:12px;--rl:20px;
+}
+html{scroll-behavior:smooth}
+body{font-family:var(--ff-b);background:var(--ink);color:var(--txt);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+::selection{background:var(--lime);color:var(--ink)}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:var(--ink2)}::-webkit-scrollbar-thumb{background:var(--ink3);border-radius:3px}
+
+/* ── ANIMATIONS ─────────────────────────────────────────────── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+@keyframes glow{0%,100%{box-shadow:0 0 0 0 rgba(201,241,53,.2)}50%{box-shadow:0 0 0 10px transparent}}
+@keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
+@keyframes scanIn{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0% 0 0)}}
+
+.fu{animation:fadeUp .5s ease both}
+.fi{animation:fadeIn .35s ease both}
+
+/* ── LAYOUT ─────────────────────────────────────────────────── */
+#app{display:flex;flex-direction:column;min-height:100vh;position:relative}
+#app::before{
+  content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(201,241,53,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(201,241,53,.025) 1px,transparent 1px);
+  background-size:52px 52px;pointer-events:none;z-index:0
+}
+
+/* ── NAV ────────────────────────────────────────────────────── */
+nav{
+  position:sticky;top:0;z-index:200;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 36px;height:62px;
+  background:rgba(9,9,15,.88);backdrop-filter:blur(24px);
+  border-bottom:1px solid var(--border);
+}
+.nav-logo{display:flex;align-items:center;gap:9px;cursor:pointer;text-decoration:none}
+.logo-hex{font-size:21px;color:var(--lime);line-height:1}
+.logo-name{font-family:var(--ff-d);font-size:17px;font-weight:800;letter-spacing:-.02em;color:#fff}
+.nav-steps{display:flex;gap:6px}
+.step{
+  display:flex;align-items:center;gap:7px;
+  padding:5px 13px;border-radius:99px;
+  border:1px solid var(--border);opacity:.38;
+  transition:all .3s ease;
+}
+.step.active{opacity:1;border-color:var(--lime);background:var(--lime-g)}
+.step.done{opacity:.65;border-color:rgba(201,241,53,.28)}
+.step-n{
+  width:19px;height:19px;border-radius:50%;
+  background:var(--ink3);font-family:var(--ff-m);font-size:10px;
+  display:flex;align-items:center;justify-content:center;color:var(--muted2)
+}
+.step.active .step-n{background:var(--lime);color:var(--ink);font-weight:600}
+.step.done .step-n{background:var(--lime-d);color:var(--ink)}
+.step-l{font-size:12px;font-weight:500;color:var(--muted2)}
+.step.active .step-l{color:#fff}
+.nav-ver{font-family:var(--ff-m);font-size:10px;color:var(--muted2);opacity:.55}
+
+/* ── MAIN ────────────────────────────────────────────────────── */
+main{flex:1;position:relative;z-index:1}
+.page{display:none}.page.active{display:block}
+
+/* ════════════════════════════════════════════════
+   PAGE 1 — UPLOAD
+════════════════════════════════════════════════ */
+.upload-wrap{max-width:1080px;margin:0 auto;padding:56px 36px 80px;display:flex;flex-direction:column;gap:44px}
+
+.hero{text-align:center;max-width:620px;margin:0 auto}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:4px 14px;margin-bottom:22px;
+  background:var(--lime-g);border:1px solid rgba(201,241,53,.28);
+  border-radius:99px;font-family:var(--ff-m);font-size:10px;
+  color:var(--lime);letter-spacing:.09em;text-transform:uppercase;
+}
+.hero-badge::before{content:'';width:6px;height:6px;background:var(--lime);border-radius:50%;animation:blink 1.8s ease infinite}
+.hero-title{
+  font-family:var(--ff-d);font-size:clamp(36px,6vw,62px);
+  font-weight:800;line-height:1.05;letter-spacing:-.03em;color:#fff;margin-bottom:18px
+}
+.hero-title em{font-style:normal;color:var(--lime);display:block}
+.hero-sub{font-size:15px;line-height:1.75;color:var(--muted2);max-width:500px;margin:0 auto}
+
+/* Upload Grid */
+.upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+@media(max-width:720px){.upload-grid{grid-template-columns:1fr}}
+
+.panel{
+  background:var(--ink2);border:1px solid var(--border);
+  border-radius:var(--rl);padding:22px;
+  display:flex;flex-direction:column;gap:14px;
+  transition:border-color .25s
+}
+.panel:focus-within{border-color:rgba(201,241,53,.22)}
+.panel-hd{display:flex;align-items:flex-start;gap:10px}
+.panel-ico{font-size:19px;line-height:1;margin-top:1px}
+.panel-title{font-family:var(--ff-d);font-size:14px;font-weight:700;color:#fff}
+.panel-sub{font-size:11px;color:var(--muted2);margin-top:2px}
+.char-ct{margin-left:auto;font-family:var(--ff-m);font-size:10px;color:var(--muted2)}
+
+textarea{
+  width:100%;background:var(--ink3);border:1px solid var(--border);
+  border-radius:var(--r);padding:14px;
+  color:#dddde8;font-family:var(--ff-m);font-size:12px;line-height:1.72;
+  resize:vertical;outline:none;transition:border-color .2s
+}
+textarea::placeholder{color:var(--muted2);opacity:.55}
+textarea:focus{border-color:rgba(201,241,53,.28)}
+
+/* Tab btns */
+.tab-btns{display:flex;gap:5px}
+.tb{
+  flex:1;padding:7px 8px;border-radius:7px;
+  border:1px solid var(--border);background:transparent;
+  color:var(--muted2);font-family:var(--ff-b);font-size:12px;cursor:pointer;transition:all .2s
+}
+.tb:hover{border-color:var(--border2);color:#fff}
+.tb.active{background:var(--lime-g);border-color:var(--lime);color:var(--lime)}
+
+/* Drop zone */
+.dropzone{
+  border:1.5px dashed var(--border2);border-radius:var(--r);
+  padding:26px 18px;text-align:center;cursor:pointer;
+  transition:all .22s;display:flex;flex-direction:column;align-items:center;gap:7px
+}
+.dropzone:hover,.dropzone.over{border-color:var(--lime);background:var(--lime-g)}
+.dz-ico{font-size:26px}.dz-txt{font-size:13px;color:var(--muted2)}.dz-sub{font-family:var(--ff-m);font-size:10px;color:var(--muted2)}
+.dropzone.has-file{border-style:solid;border-color:rgba(45,212,191,.3);background:rgba(45,212,191,.05);cursor:default}
+.file-nm{font-size:13px;color:#fff;font-weight:500}.file-sz{font-family:var(--ff-m);font-size:10px;color:var(--muted2)}
+.rm-file{
+  margin-top:3px;background:transparent;
+  border:1px solid rgba(255,107,107,.3);color:var(--coral);
+  padding:3px 11px;border-radius:5px;font-size:10px;cursor:pointer;transition:all .2s
+}
+.rm-file:hover{background:rgba(255,107,107,.1)}
+
+/* Error */
+.err-bar{
+  background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.3);
+  border-radius:var(--r);padding:11px 18px;color:var(--coral);font-size:13px;
+  display:flex;align-items:center;gap:9px
+}
+
+/* CTA */
+.cta-wrap{display:flex;flex-direction:column;align-items:center;gap:11px}
+.cta-btn{
+  display:inline-flex;align-items:center;gap:11px;
+  padding:15px 46px;background:var(--lime);color:var(--ink);
+  font-family:var(--ff-d);font-size:15px;font-weight:700;
+  border:none;border-radius:99px;cursor:pointer;transition:all .22s;
+  animation:glow 2.8s ease infinite
+}
+.cta-btn:hover:not(:disabled){background:#d5fd46;transform:translateY(-2px);box-shadow:0 8px 30px rgba(201,241,53,.28)}
+.cta-btn:disabled{opacity:.65;cursor:not-allowed;animation:none}
+.cta-btn.loading{background:var(--ink3);color:var(--lime);border:1px solid rgba(201,241,53,.3)}
+.cta-arr{font-size:17px;transition:transform .2s}
+.cta-btn:hover .cta-arr{transform:translateX(4px)}
+.cta-note{font-family:var(--ff-m);font-size:10px;color:var(--muted2)}
+
+.spin{width:15px;height:15px;border:2px solid rgba(201,241,53,.25);border-top-color:var(--lime);border-radius:50%;animation:spin .65s linear infinite}
+
+/* Demo */
+.demo-row{display:flex;align-items:center;justify-content:center;gap:11px}
+.demo-lbl{font-family:var(--ff-m);font-size:10px;color:var(--muted2);text-transform:uppercase;letter-spacing:.08em}
+.demo-btn{background:transparent;border:none;color:var(--teal);font-size:12px;cursor:pointer;text-decoration:underline;text-underline-offset:3px;font-family:var(--ff-b);transition:color .2s}
+.demo-btn:hover{color:#fff}
+
+/* ════════════════════════════════════════════════
+   PAGE 2 — ASSESS
+════════════════════════════════════════════════ */
+.assess-wrap{display:grid;grid-template-columns:270px 1fr;height:calc(100vh - 62px);overflow:hidden}
+
+/* Sidebar */
+.sidebar{
+  background:var(--ink2);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;padding:22px;gap:14px
+}
+.sb-hd{display:flex;justify-content:space-between;align-items:center}
+.sb-title{font-family:var(--ff-d);font-size:12px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.06em}
+.sb-ct{font-family:var(--ff-m);font-size:10px;color:var(--muted2)}
+
+.prog-bar{height:3px;background:var(--ink3);border-radius:99px;overflow:hidden}
+.prog-fill{height:100%;background:var(--lime);border-radius:99px;transition:width .6s ease}
+
+.skill-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:7px}
+.sk-item{
+  display:flex;align-items:flex-start;gap:9px;
+  padding:9px 10px;border-radius:9px;border:1px solid transparent;transition:all .2s
+}
+.sk-item.curr{background:var(--lime-g);border-color:rgba(201,241,53,.28)}
+.sk-item.done{background:rgba(45,212,191,.05);border-color:rgba(45,212,191,.15)}
+.sk-item.pend{opacity:.38}
+.sk-ind{
+  width:20px;height:20px;border-radius:50%;background:var(--ink3);
+  font-family:var(--ff-m);font-size:9px;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--muted2);flex-shrink:0;margin-top:1px
+}
+.sk-item.curr .sk-ind{background:var(--lime);color:var(--ink);font-size:11px}
+.sk-item.done .sk-ind{background:var(--teal);color:var(--ink)}
+.sk-nm{font-size:12px;color:#dddde8;font-weight:500;line-height:1.3}
+.sk-item.curr .sk-nm{color:#fff}
+.sk-score{display:flex;align-items:center;gap:7px;margin-top:5px}
+.sc-bar{height:3px;background:var(--ink3);border-radius:99px;overflow:hidden;min-width:52px;flex:1}
+.sc-fill{height:100%;border-radius:99px;transition:width .5s ease}
+.sc-val{font-family:var(--ff-m);font-size:9px;color:var(--muted2)}
+
+.gap-sum{padding-top:13px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:7px}
+.gap-sum-lbl{font-family:var(--ff-m);font-size:9px;color:var(--muted2);text-transform:uppercase;letter-spacing:.08em}
+.g-pill{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--muted2)}
+.g-dot{width:6px;height:6px;border-radius:50%}
+.g-matched .g-dot{background:var(--lime)}.g-partial .g-dot{background:var(--amber)}.g-missing .g-dot{background:var(--coral)}
+
+/* Chat Column */
+.chat-col{display:flex;flex-direction:column;overflow:hidden;background:var(--ink)}
+.chat-hd{
+  padding:14px 28px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;flex-shrink:0
+}
+.chat-hd-lbl{font-family:var(--ff-m);font-size:9px;color:var(--muted2);text-transform:uppercase;letter-spacing:.08em}
+.chat-hd-skill{font-family:var(--ff-d);font-size:15px;font-weight:700;color:var(--lime)}
+
+.chat-msgs{
+  flex:1;overflow-y:auto;padding:22px 28px;
+  display:flex;flex-direction:column;gap:18px
+}
+.chat-empty{margin:auto;text-align:center;color:var(--muted2);font-size:13px;display:flex;flex-direction:column;align-items:center;gap:10px}
+.chat-empty-ico{font-size:34px;opacity:.45}
+
+/* Messages */
+.msg{display:flex;gap:12px;animation:fadeUp .3s ease both}
+.msg.user{flex-direction:row-reverse}
+.msg-av{
+  width:34px;height:34px;border-radius:9px;background:var(--ink2);
+  border:1px solid var(--border);display:flex;align-items:center;
+  justify-content:center;font-size:15px;flex-shrink:0
+}
+.msg.assistant .msg-av{background:var(--lime-g);border-color:rgba(201,241,53,.28)}
+.msg-body{max-width:66%;display:flex;flex-direction:column;gap:5px}
+.msg.user .msg-body{align-items:flex-end}
+.msg-role{font-family:var(--ff-m);font-size:9px;color:var(--muted2);text-transform:uppercase;letter-spacing:.06em}
+.msg-txt{
+  background:var(--ink2);border:1px solid var(--border);border-radius:11px;
+  padding:11px 15px;font-size:13px;line-height:1.68;color:#d8d8e4;white-space:pre-wrap
+}
+.msg.user .msg-txt{background:var(--lime-g);border-color:rgba(201,241,53,.22);color:#fff;border-radius:11px 4px 11px 11px}
+.msg.assistant .msg-txt{border-radius:4px 11px 11px 11px}
+
+.chat-div{
+  text-align:center;font-family:var(--ff-m);font-size:10px;color:var(--muted2);
+  padding:6px 0;position:relative
+}
+.chat-sys{
+  text-align:center;font-family:var(--ff-m);font-size:11px;color:var(--muted2);
+  background:var(--ink2);border:1px solid var(--border);border-radius:7px;padding:7px 14px
+}
+.typing{display:flex;gap:4px;padding-left:46px}
+.typing span{width:6px;height:6px;background:var(--muted2);border-radius:50%;animation:blink 1.1s ease infinite}
+.typing span:nth-child(2){animation-delay:.2s}.typing span:nth-child(3){animation-delay:.4s}
+
+/* Skill complete */
+.sk-done{
+  margin:0 28px;background:var(--ink2);border:1px solid rgba(45,212,191,.28);
+  border-radius:var(--rl);padding:18px 22px;display:flex;flex-direction:column;gap:13px;
+  animation:fadeIn .4s ease both
+}
+.skd-hd{display:flex;align-items:flex-start;gap:10px}
+.skd-check{
+  width:26px;height:26px;background:var(--teal);color:var(--ink);
+  border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0
+}
+.skd-title{font-weight:600;color:#fff;font-size:13px}
+.skd-rat{font-size:11px;color:var(--muted2);margin-top:3px;line-height:1.5}
+.skd-scores{display:flex;gap:14px}
+.skd-sc{flex:1;display:flex;flex-direction:column;gap:5px}
+.skd-sc-lbl{font-family:var(--ff-m);font-size:9px;color:var(--muted2);text-transform:uppercase}
+.skd-sc-val{font-family:var(--ff-m);font-size:10px;color:var(--muted2)}
+.next-btn{
+  align-self:flex-end;padding:7px 18px;background:var(--lime);
+  color:var(--ink);border:none;border-radius:99px;
+  font-family:var(--ff-d);font-weight:700;font-size:12px;cursor:pointer;transition:all .2s
+}
+.next-btn:hover{background:#d5fd46;transform:translateY(-1px)}
+
+/* All done */
+.all-done{
+  margin:0 28px;background:var(--lime-g);border:1px solid rgba(201,241,53,.28);
+  border-radius:var(--rl);padding:28px;display:flex;flex-direction:column;
+  align-items:center;gap:11px;text-align:center;animation:fadeIn .4s ease both
+}
+.adc-ico{font-size:38px;animation:float 3s ease infinite}
+.adc-title{font-family:var(--ff-d);font-size:19px;font-weight:800;color:#fff}
+.adc-sub{font-size:12px;color:var(--muted2)}
+.view-rep{
+  padding:9px 26px;background:var(--lime);color:var(--ink);
+  border:none;border-radius:99px;font-family:var(--ff-d);font-weight:700;
+  font-size:13px;cursor:pointer;margin-top:6px;transition:all .2s
+}
+.view-rep:hover{background:#d5fd46;transform:translateY(-2px)}
+
+/* Input */
+.chat-inp-wrap{
+  display:flex;align-items:flex-end;gap:9px;
+  padding:14px 28px 22px;border-top:1px solid var(--border);flex-shrink:0
+}
+.chat-inp{
+  flex:1;background:var(--ink2);border:1px solid var(--border2);
+  border-radius:12px;padding:12px 16px;color:#dddde8;
+  font-family:var(--ff-b);font-size:13px;line-height:1.5;
+  resize:none;outline:none;transition:border-color .2s;height:52px
+}
+.chat-inp::placeholder{color:var(--muted2)}
+.chat-inp:focus{border-color:rgba(201,241,53,.28);height:80px}
+.send{
+  width:42px;height:42px;background:var(--lime);border:none;
+  border-radius:11px;font-size:17px;color:var(--ink);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-weight:700;flex-shrink:0;transition:all .2s
+}
+.send:hover:not(.off){background:#d5fd46;transform:translateY(-1px)}
+.send.off{opacity:.38;cursor:not-allowed}
+.spin-sm{width:13px;height:13px;border:2px solid rgba(9,9,15,.25);border-top-color:var(--ink);border-radius:50%;animation:spin .65s linear infinite}
+
+/* ════════════════════════════════════════════════
+   PAGE 3 — REPORT
+════════════════════════════════════════════════ */
+.report-wrap{max-width:940px;margin:0 auto;padding:44px 36px 80px;display:flex;flex-direction:column;gap:30px}
+
+.rep-hd{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:14px}
+.rep-badge{
+  display:inline-block;font-family:var(--ff-m);font-size:9px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--lime);background:var(--lime-g);
+  border:1px solid rgba(201,241,53,.22);padding:3px 11px;border-radius:99px;margin-bottom:10px
+}
+.rep-title{font-family:var(--ff-d);font-size:clamp(26px,4vw,42px);font-weight:800;letter-spacing:-.02em;color:#fff;margin-bottom:5px}
+.rep-sub{font-size:13px;color:var(--muted2)}
+.reset-btn{
+  background:transparent;border:1px solid var(--border2);color:var(--muted2);
+  padding:7px 16px;border-radius:99px;font-size:11px;cursor:pointer;
+  font-family:var(--ff-b);transition:all .2s;white-space:nowrap
+}
+.reset-btn:hover{color:#fff;background:var(--ink2)}
+
+/* Heatmap */
+.heatmap{background:var(--ink2);border:1px solid var(--border);border-radius:var(--rl);padding:22px;display:flex;flex-direction:column;gap:14px}
+.sec-lbl{font-family:var(--ff-m);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted2)}
+.chip-wrap{display:flex;flex-wrap:wrap;gap:7px}
+.chip{
+  display:flex;align-items:center;gap:6px;padding:5px 13px;
+  border:1px solid;border-radius:99px;font-size:11px;font-weight:500;color:#dddde8
+}
+.chip.matched{background:rgba(201,241,53,.1);border-color:rgba(201,241,53,.35)}
+.chip.partial {background:rgba(251,191,36,.1);border-color:rgba(251,191,36,.35)}
+.chip.missing {background:rgba(255,107,107,.1);border-color:rgba(255,107,107,.35)}
+.chip-dot{width:6px;height:6px;border-radius:50%}
+.chip.matched .chip-dot{background:var(--lime)}
+.chip.partial  .chip-dot{background:var(--amber)}
+.chip.missing  .chip-dot{background:var(--coral)}
+
+.legend{display:flex;gap:18px}
+.leg{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted2)}
+.leg-dot{width:7px;height:7px;border-radius:50%}
+
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+@media(max-width:580px){.stats{grid-template-columns:repeat(2,1fr)}}
+.stat{
+  background:var(--ink2);border:1px solid var(--border);border-radius:var(--r);
+  padding:18px;display:flex;flex-direction:column;gap:5px;transition:border-color .2s
+}
+.stat:hover{border-color:var(--border2)}
+.stat-ico{font-size:18px}
+.stat-val{font-family:var(--ff-d);font-size:34px;font-weight:800;color:#fff;line-height:1}
+.stat-lbl{font-family:var(--ff-m);font-size:9px;color:var(--muted2);text-transform:uppercase;letter-spacing:.06em}
+.stat.s-lime{border-left:3px solid var(--lime)}
+.stat.s-amber{border-left:3px solid var(--amber)}
+.stat.s-coral{border-left:3px solid var(--coral)}
+.stat.s-teal{border-left:3px solid var(--teal)}
+
+/* Tabs */
+.tab-nav{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:0}
+.tnb{
+  padding:9px 18px;background:transparent;border:none;border-bottom:2px solid transparent;
+  color:var(--muted2);font-family:var(--ff-b);font-size:12px;cursor:pointer;
+  margin-bottom:-1px;transition:all .2s;white-space:nowrap
+}
+.tnb:hover{color:#fff}
+.tnb.active{color:var(--lime);border-bottom-color:var(--lime)}
+
+.tab-pane{display:none}.tab-pane.active{display:flex;flex-direction:column;gap:22px;animation:fadeIn .3s ease}
+
+/* Overview */
+.ov-group{display:flex;flex-direction:column;gap:10px}
+.ov-gt{font-family:var(--ff-d);font-size:13px;font-weight:700}
+.ov-gt.lime{color:var(--lime)}.ov-gt.amber{color:var(--amber)}.ov-gt.coral{color:var(--coral)}
+.ov-chips{display:flex;flex-wrap:wrap;gap:7px}
+.ov-chip{
+  display:flex;align-items:center;gap:7px;padding:5px 13px;
+  border-radius:7px;border:1px solid;font-size:12px;color:#dddde8
+}
+.ov-chip.lime{background:rgba(201,241,53,.07);border-color:rgba(201,241,53,.28)}
+.ov-chip.amber{background:rgba(251,191,36,.07);border-color:rgba(251,191,36,.28)}
+.ov-chip.coral{background:rgba(255,107,107,.07);border-color:rgba(255,107,107,.28)}
+.ov-lvl{font-family:var(--ff-m);font-size:10px;color:var(--muted2)}
+
+/* Gaps */
+.gaps-list{display:flex;flex-direction:column;gap:14px}
+.gap-card{
+  display:flex;gap:14px;background:var(--ink2);border:1px solid var(--border);
+  border-radius:var(--rl);padding:18px 22px;transition:border-color .2s
+}
+.gap-card:hover{border-color:var(--border2)}
+.gap-rank{font-family:var(--ff-m);font-size:10px;color:var(--muted2);padding-top:1px;width:26px;flex-shrink:0}
+.gap-body{flex:1;display:flex;flex-direction:column;gap:9px}
+.gap-top{display:flex;justify-content:space-between;align-items:center}
+.gap-skill{font-family:var(--ff-d);font-size:15px;font-weight:700;color:#fff}
+.gap-badge{
+  display:flex;align-items:baseline;gap:3px;
+  background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.22);
+  padding:2px 9px;border-radius:99px
+}
+.gap-badge .gv{font-family:var(--ff-m);font-size:13px;color:var(--coral);font-weight:500}
+.gap-badge .gl{font-family:var(--ff-m);font-size:9px;color:var(--coral);text-transform:uppercase}
+.gap-reason{font-size:12px;color:var(--muted2);line-height:1.6}
+.adj{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.adj-lbl{font-family:var(--ff-m);font-size:9px;color:var(--muted2);text-transform:uppercase}
+.adj-chip{
+  padding:2px 9px;background:var(--lime-g);
+  border:1px solid rgba(201,241,53,.22);border-radius:5px;
+  font-size:10px;color:var(--lime)
+}
+.gap-wks{font-family:var(--ff-m);font-size:10px;color:var(--muted2)}
+
+/* Plan */
+.plan-list{display:flex;flex-direction:column;gap:28px}
+.psb{background:var(--ink2);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden}
+.psb-hd{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:18px 22px;border-bottom:1px solid var(--border);background:var(--ink3)
+}
+.psb-skill{font-family:var(--ff-d);font-size:17px;font-weight:800;color:#fff}
+.psb-wks{font-family:var(--ff-m);font-size:11px;color:var(--lime)}
+.stages{padding:18px 22px;display:flex;flex-direction:column;gap:16px}
+.stage{border:1px solid var(--border);border-radius:var(--r);padding:14px 18px;display:flex;flex-direction:column;gap:10px;background:var(--ink)}
+.stage-tag{display:flex;align-items:center;gap:9px}
+.stage-n{
+  width:22px;height:22px;background:var(--lime-g);
+  border:1px solid rgba(201,241,53,.28);border-radius:5px;
+  font-family:var(--ff-m);font-size:10px;color:var(--lime);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0
+}
+.stage-name{font-family:var(--ff-d);font-size:13px;font-weight:700;color:#fff;flex:1}
+.stage-wks{font-family:var(--ff-m);font-size:10px;color:var(--muted2)}
+.stage-goal{font-size:12px;color:var(--muted2);line-height:1.6}
+.milestone{
+  display:flex;align-items:flex-start;gap:7px;font-size:11px;color:var(--muted2);
+  background:var(--ink2);padding:7px 11px;border-radius:7px;border-left:3px solid var(--teal)
+}
+.resources{display:flex;flex-direction:column;gap:7px}
+.res{
+  display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:10px;
+  padding:9px 12px;background:var(--ink2);border:1px solid var(--border);
+  border-radius:7px;text-decoration:none;transition:all .2s
+}
+.res:hover{border-color:var(--border2);background:var(--ink3);transform:translateX(4px)}
+.res-type{
+  font-family:var(--ff-m);font-size:8px;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--lime);background:var(--lime-g);border:1px solid rgba(201,241,53,.18);
+  padding:2px 6px;border-radius:3px;white-space:nowrap
+}
+.res-title{font-size:12px;color:#dddde8;line-height:1.3}
+.res-meta{font-family:var(--ff-m);font-size:9px;color:var(--muted2);white-space:nowrap}
+.res-arr{font-size:13px;color:var(--muted2)}
+
+/* Loading */
+.loading-st{display:flex;flex-direction:column;align-items:center;gap:14px;padding:52px}
+.ld-dots{display:flex;gap:5px}
+.ld-dots span{width:7px;height:7px;background:var(--lime);border-radius:50%;animation:blink 1.1s ease infinite}
+.ld-dots span:nth-child(2){animation-delay:.2s}.ld-dots span:nth-child(3){animation-delay:.4s}
+.ld-txt{font-family:var(--ff-m);font-size:11px;color:var(--muted2)}
+
+.empty-st{text-align:center;color:var(--muted2);font-size:13px;padding:36px}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="#" onclick="resetApp();return false">
+    <span class="logo-hex">⬡</span>
+    <span class="logo-name">Catalyst</span>
+  </a>
+  <div class="nav-steps">
+    <div class="step active" id="step-upload">
+      <span class="step-n" id="sn1">1</span>
+      <span class="step-l">Upload</span>
+    </div>
+    <div class="step" id="step-assess">
+      <span class="step-n" id="sn2">2</span>
+      <span class="step-l">Assess</span>
+    </div>
+    <div class="step" id="step-report">
+      <span class="step-n" id="sn3">3</span>
+      <span class="step-l">Report</span>
+    </div>
+  </div>
+  <span class="nav-ver">v1.0</span>
+</nav>
+
+<main>
+
+<!-- ═══════════ PAGE 1: UPLOAD ═══════════ -->
+<div class="page active" id="page-upload">
+<div class="upload-wrap">
+
+  <div class="hero fu" style="animation-delay:.05s">
+    <div class="hero-badge">AI-Powered Assessment</div>
+    <h1 class="hero-title">Beyond the<em>resume claim.</em></h1>
+    <p class="hero-sub">Paste a job description and a candidate resume. Catalyst will extract every required skill, probe actual proficiency through conversation, then build a personalised learning roadmap.</p>
+  </div>
+
+  <div class="upload-grid fu" style="animation-delay:.12s">
+    <!-- JD Panel -->
+    <div class="panel">
+      <div class="panel-hd">
+        <span class="panel-ico">📋</span>
+        <div>
+          <div class="panel-title">Job Description</div>
+          <div class="panel-sub">Paste the full JD with requirements</div>
+        </div>
+        <span class="char-ct" id="jd-ct">0 ch</span>
+      </div>
+      <textarea id="jd-txt" rows="14" placeholder="We are looking for a Senior Backend Engineer...
+
+Requirements:
+• 3+ years Python / FastAPI
+• PostgreSQL, Redis
+• REST API design
+• Docker & CI/CD
+..." oninput="document.getElementById('jd-ct').textContent=this.value.length+' ch'"></textarea>
+    </div>
+
+    <!-- Resume Panel -->
+    <div class="panel">
+      <div class="panel-hd">
+        <span class="panel-ico">👤</span>
+        <div>
+          <div class="panel-title">Candidate Resume</div>
+          <div class="panel-sub">PDF upload or paste plain text</div>
+        </div>
+      </div>
+      <div class="tab-btns">
+        <button class="tb active" id="tb-text" onclick="switchTab('text')">✏️ Paste Text</button>
+        <button class="tb" id="tb-pdf" onclick="document.getElementById('pdf-in').click()">📄 Upload PDF</button>
+        <input type="file" id="pdf-in" accept=".pdf" style="display:none" onchange="handleFile(this.files[0])"/>
+      </div>
+      <div id="resume-text-wrap">
+        <textarea id="resume-txt" rows="10" placeholder="Jane Smith — jane@email.com
+
+Experience:
+• 4 years Python (Flask, Django)
+• MySQL, basic PostgreSQL
+• REST APIs, some Docker
+..."></textarea>
+      </div>
+      <div id="resume-file-wrap" style="display:none">
+        <div class="dropzone has-file" id="file-dz">
+          <span class="dz-ico">📄</span>
+          <span class="file-nm" id="file-nm">—</span>
+          <span class="file-sz" id="file-sz">—</span>
+          <button class="rm-file" onclick="removeFile()">✕ Remove</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="upload-err" class="err-bar fi" style="display:none">
+    <span>⚠️</span><span id="err-msg">Error</span>
+  </div>
+
+  <div class="cta-wrap fu" style="animation-delay:.18s">
+    <button class="cta-btn" id="cta" onclick="startParse()">
+      Begin Assessment <span class="cta-arr">→</span>
+    </button>
+    <p class="cta-note">Takes ~15 seconds · Powered by Claude Sonnet</p>
+  </div>
+
+  <div class="demo-row fu" style="animation-delay:.24s">
+    <span class="demo-lbl">Quick demo</span>
+    <button class="demo-btn" onclick="fillDemo()">Fill sample data →</button>
+  </div>
+
+</div>
+</div>
+
+<!-- ═══════════ PAGE 2: ASSESS ═══════════ -->
+<div class="page" id="page-assess">
+<div class="assess-wrap">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sb-hd">
+      <span class="sb-title">Skills</span>
+      <span class="sb-ct" id="sb-ct">0/0</span>
+    </div>
+    <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+    <div class="skill-list" id="skill-list"></div>
+    <div class="gap-sum" id="gap-sum"></div>
+  </aside>
+
+  <!-- Chat -->
+  <div class="chat-col">
+    <div class="chat-hd">
+      <span class="chat-hd-lbl">Assessing</span>
+      <span class="chat-hd-skill" id="chat-skill-name">—</span>
+    </div>
+    <div class="chat-msgs" id="chat-msgs">
+      <div class="chat-empty" id="chat-empty">
+        <div class="chat-empty-ico">💬</div>
+        <div>Starting assessment…</div>
+      </div>
+    </div>
+    <div id="sk-done-wrap"></div>
+    <div id="all-done-wrap"></div>
+    <div class="chat-inp-wrap" id="chat-inp-wrap">
+      <textarea class="chat-inp" id="chat-inp" placeholder="Type your answer… (Enter to send)" rows="2"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg()}"
+        oninput="this.style.height='52px';this.style.height=Math.min(this.scrollHeight,90)+'px'"></textarea>
+      <button class="send" id="send-btn" onclick="sendMsg()">↑</button>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ═══════════ PAGE 3: REPORT ═══════════ -->
+<div class="page" id="page-report">
+<div class="report-wrap">
+
+  <div class="rep-hd fu">
+    <div>
+      <div class="rep-badge">Assessment Complete</div>
+      <h1 class="rep-title">Your Skill Report</h1>
+      <p class="rep-sub">Here's how the candidate stacks up — and the path forward.</p>
+    </div>
+    <button class="reset-btn" onclick="resetApp()">← New Assessment</button>
+  </div>
+
+  <div class="heatmap fu" style="animation-delay:.05s">
+    <div class="sec-lbl">Skill Heatmap</div>
+    <div class="chip-wrap" id="heatmap-chips"></div>
+    <div class="legend">
+      <div class="leg"><span class="leg-dot" style="background:var(--lime)"></span><span id="lg-m">0 Matched</span></div>
+      <div class="leg"><span class="leg-dot" style="background:var(--amber)"></span><span id="lg-p">0 Partial</span></div>
+      <div class="leg"><span class="leg-dot" style="background:var(--coral)"></span><span id="lg-mi">0 Missing</span></div>
+    </div>
+  </div>
+
+  <div class="stats fu" style="animation-delay:.1s" id="stat-cards"></div>
+
+  <div class="tab-nav fu" style="animation-delay:.15s">
+    <button class="tnb active" onclick="switchRepTab('overview',this)">📋 Overview</button>
+    <button class="tnb" onclick="switchRepTab('gaps',this)">🎯 Gap Analysis</button>
+    <button class="tnb" onclick="switchRepTab('plan',this)">🗺️ Learning Plan</button>
+  </div>
+
+  <div class="tab-pane active" id="tab-overview"></div>
+  <div class="tab-pane" id="tab-gaps">
+    <div class="loading-st" id="gaps-loading">
+      <div class="ld-dots"><span></span><span></span><span></span></div>
+      <div class="ld-txt">Analysing skill gaps…</div>
+    </div>
+    <div class="gaps-list" id="gaps-list" style="display:none"></div>
+  </div>
+  <div class="tab-pane" id="tab-plan">
+    <div class="loading-st" id="plan-loading">
+      <div class="ld-dots"><span></span><span></span><span></span></div>
+      <div class="ld-txt">Generating personalised learning plan…</div>
+    </div>
+    <div class="plan-list" id="plan-list" style="display:none"></div>
+  </div>
+
+</div>
+</div>
+
+</main>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════
+   STATE
+════════════════════════════════════════════════ */
+const API = '/api'
+let state = {
+  sessionId: null,
+  gaps: [],
+  requiredSkills: [],
+  claimedSkills: [],
+  skillsToAssess: [],
+  scores: [],
+  currentSkillIdx: 0,
+  phase: 'idle', // idle | chatting | skill_done | all_done
+  resumeFile: null,
+}
+
+/* ════════════════════════════════════════════════
+   NAV
+════════════════════════════════════════════════ */
+function goPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'))
+  document.getElementById('page-' + name).classList.add('active')
+  const steps = ['upload','assess','report']
+  steps.forEach((s,i) => {
+    const el = document.getElementById('step-' + s)
+    const idx = steps.indexOf(name)
+    el.classList.remove('active','done')
+    if (i === idx) el.classList.add('active')
+    else if (i < idx) el.classList.add('done')
+  })
+}
+
+function resetApp() {
+  state = { sessionId:null, gaps:[], requiredSkills:[], claimedSkills:[], skillsToAssess:[], scores:[], currentSkillIdx:0, phase:'idle', resumeFile:null }
+  document.getElementById('jd-txt').value = ''
+  document.getElementById('resume-txt').value = ''
+  document.getElementById('jd-ct').textContent = '0 ch'
+  document.getElementById('upload-err').style.display = 'none'
+  removeFile()
+  setCta(false)
+  goPage('upload')
+}
+
+/* ════════════════════════════════════════════════
+   PAGE 1 — UPLOAD
+════════════════════════════════════════════════ */
+function switchTab(tab) {
+  if (tab === 'text') {
+    document.getElementById('resume-text-wrap').style.display = ''
+    document.getElementById('resume-file-wrap').style.display = 'none'
+    document.getElementById('tb-text').classList.add('active')
+    document.getElementById('tb-pdf').classList.remove('active')
+    removeFile()
+  }
+}
+
+function handleFile(file) {
+  if (!file || file.type !== 'application/pdf') { showErr('Please upload a PDF file.'); return }
+  state.resumeFile = file
+  document.getElementById('resume-text-wrap').style.display = 'none'
+  document.getElementById('resume-file-wrap').style.display = ''
+  document.getElementById('file-nm').textContent = file.name
+  document.getElementById('file-sz').textContent = (file.size/1024).toFixed(1) + ' KB'
+  document.getElementById('tb-pdf').classList.add('active')
+  document.getElementById('tb-text').classList.remove('active')
+  document.getElementById('upload-err').style.display = 'none'
+}
+
+function removeFile() {
+  state.resumeFile = null
+  document.getElementById('resume-text-wrap').style.display = ''
+  document.getElementById('resume-file-wrap').style.display = 'none'
+  document.getElementById('tb-text').classList.add('active')
+  document.getElementById('tb-pdf').classList.remove('active')
+  document.getElementById('pdf-in').value = ''
+}
+
+function showErr(msg) {
+  const bar = document.getElementById('upload-err')
+  document.getElementById('err-msg').textContent = msg
+  bar.style.display = 'flex'
+}
+
+function setCta(loading) {
+  const btn = document.getElementById('cta')
+  if (loading) {
+    btn.disabled = true
+    btn.classList.add('loading')
+    btn.innerHTML = '<span class="spin"></span> Analysing skills…'
+  } else {
+    btn.disabled = false
+    btn.classList.remove('loading')
+    btn.innerHTML = 'Begin Assessment <span class="cta-arr">→</span>'
+  }
+}
+
+async function startParse() {
+  const jd = document.getElementById('jd-txt').value.trim()
+  const resume = document.getElementById('resume-txt').value.trim()
+  if (!jd) { showErr('Please paste a job description.'); return }
+  if (!resume && !state.resumeFile) { showErr('Please add a resume — paste text or upload a PDF.'); return }
+
+  document.getElementById('upload-err').style.display = 'none'
+  setCta(true)
+
+  try {
+    const form = new FormData()
+    form.append('jd_text', jd)
+    if (state.resumeFile) form.append('resume_file', state.resumeFile)
+    else form.append('resume_text', resume)
+
+    const res = await fetch(`${API}/parse/`, { method:'POST', body:form })
+    if (!res.ok) throw new Error(`Server error ${res.status} — is the backend running on port 8000?`)
+    const data = await res.json()
+
+    state.sessionId = data.session_id
+    state.gaps = data.gaps || []
+    state.requiredSkills = data.required_skills || []
+    state.claimedSkills = data.claimed_skills || []
+    state.skillsToAssess = data.skills_to_assess || []
+    state.scores = []
+    state.currentSkillIdx = 0
+
+    setCta(false)
+    initAssess()
+    goPage('assess')
+  } catch (e) {
+    showErr(e.message)
+    setCta(false)
+  }
+}
+
+function fillDemo() {
+  document.getElementById('jd-txt').value = `Senior Python Backend Engineer
+
+We're looking for an experienced backend engineer to join our platform team.
+
+Requirements:
+• 4+ years of Python development
+• Strong expertise in FastAPI or Django REST Framework
+• PostgreSQL and Redis experience
+• Familiarity with Docker and Kubernetes
+• Understanding of system design and distributed systems
+• Experience with CI/CD pipelines (GitHub Actions, Jenkins)
+• Good communication skills`
+  document.getElementById('jd-ct').textContent = document.getElementById('jd-txt').value.length + ' ch'
+  document.getElementById('resume-txt').value = `Jane Smith — jane@example.com
+
+Summary: Python developer with 5 years of experience building backend services.
+
+Experience:
+• Python (Flask, some FastAPI) — 5 years
+• MySQL, some PostgreSQL — 4 years
+• Docker basics — 2 years
+• REST API design — 4 years
+• Git, basic CI/CD with GitHub Actions
+
+Education: B.Tech Computer Science, 2019`
+  document.getElementById('upload-err').style.display = 'none'
+}
+
+/* ════════════════════════════════════════════════
+   PAGE 2 — ASSESS
+════════════════════════════════════════════════ */
+function initAssess() {
+  renderSidebar()
+  renderGapSum()
+  document.getElementById('chat-msgs').innerHTML = '<div class="chat-empty" id="chat-empty"><div class="chat-empty-ico">💬</div><div>Starting assessment…</div></div>'
+  document.getElementById('sk-done-wrap').innerHTML = ''
+  document.getElementById('all-done-wrap').innerHTML = ''
+  document.getElementById('chat-inp-wrap').style.display = ''
+  document.getElementById('chat-inp').value = ''
+  document.getElementById('send-btn').className = 'send off'
+  if (state.skillsToAssess.length === 0) { goReport(); return }
+  startSkill()
+}
+
+function renderSidebar() {
+  document.getElementById('sb-ct').textContent = `0/${state.skillsToAssess.length}`
+  const list = document.getElementById('skill-list')
+  list.innerHTML = state.skillsToAssess.map((s, i) => `
+    <div class="sk-item pend" id="sk-${i}">
+      <span class="sk-ind" id="sk-ind-${i}">${i+1}</span>
+      <div style="flex:1">
+        <div class="sk-nm">${esc(s)}</div>
+        <div id="sk-score-${i}"></div>
+      </div>
+    </div>`).join('')
+  document.getElementById('prog-fill').style.width = '0%'
+}
+
+function renderGapSum() {
+  const m = state.gaps.filter(g=>g.status==='matched').length
+  const p = state.gaps.filter(g=>g.status==='partial').length
+  const mi = state.gaps.filter(g=>g.status==='missing').length
+  document.getElementById('gap-sum').innerHTML = `
+    <div class="gap-sum-lbl">Gap Overview</div>
+    ${m?`<div class="g-pill g-matched"><span class="g-dot"></span>${m} matched</div>`:''}
+    ${p?`<div class="g-pill g-partial"><span class="g-dot"></span>${p} partial</div>`:''}
+    ${mi?`<div class="g-pill g-missing"><span class="g-dot"></span>${mi} missing</div>`:''}`
+}
+
+function updateSidebarItem(idx, score) {
+  const item = document.getElementById(`sk-${idx}`)
+  if (!item) return
+  item.className = 'sk-item done'
+  document.getElementById(`sk-ind-${idx}`).textContent = '✓'
+  const pct = (score.score/10)*100
+  const col = score.score>=7?'var(--lime)':score.score>=4?'var(--amber)':'var(--coral)'
+  document.getElementById(`sk-score-${idx}`).innerHTML = `
+    <div class="sk-score">
+      <div class="sc-bar"><div class="sc-fill" style="width:${pct}%;background:${col}"></div></div>
+      <span class="sc-val">${score.score.toFixed(1)}</span>
+    </div>`
+  // next item becomes current
+  const next = document.getElementById(`sk-${idx+1}`)
+  if (next) next.className = 'sk-item curr'
+  // Progress
+  const done = state.scores.length
+  const total = state.skillsToAssess.length
+  document.getElementById('sb-ct').textContent = `${done}/${total}`
+  document.getElementById('prog-fill').style.width = `${(done/total)*100}%`
+}
+
+async function startSkill() {
+  const idx = state.currentSkillIdx
+  if (idx >= state.skillsToAssess.length) { goReport(); return }
+
+  const item = document.getElementById(`sk-${idx}`)
+  if (item) item.className = 'sk-item curr'
+  const ind = document.getElementById(`sk-ind-${idx}`)
+  if (ind) ind.textContent = '◉'
+
+  document.getElementById('chat-skill-name').textContent = state.skillsToAssess[idx]
+  document.getElementById('chat-inp-wrap').style.display = 'none'
+  clearEmpty()
+
+  try {
+    const res = await fetch(`${API}/assess/start`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ session_id: state.sessionId })
+    })
+    if (!res.ok) throw new Error(`API error ${res.status}`)
+    const data = await res.json()
+    if (data.done) { goReport(); return }
+    appendMsg('assistant', data.message)
+    state.phase = 'chatting'
+    document.getElementById('chat-inp-wrap').style.display = ''
+    setSend(true)
+  } catch(e) {
+    appendSys('⚠️ ' + e.message)
+    document.getElementById('chat-inp-wrap').style.display = ''
+  }
+}
+
+async function sendMsg() {
+  const inp = document.getElementById('chat-inp')
+  const text = inp.value.trim()
+  if (!text || state.phase !== 'chatting') return
+  inp.value = ''
+  inp.style.height = '52px'
+  setSend(false)
+  appendMsg('user', text)
+  showTyping()
+
+  try {
+    const res = await fetch(`${API}/assess/message`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ session_id: state.sessionId, user_message: text })
+    })
+    if (!res.ok) throw new Error(`API error ${res.status}`)
+    const data = await res.json()
+    hideTyping()
+    appendMsg('assistant', data.message)
+
+    if (data.skill_complete) {
+      state.scores.push(data.score)
+      updateSidebarItem(state.currentSkillIdx, data.score)
+      state.currentSkillIdx++
+      state.phase = 'skill_done'
+      document.getElementById('chat-inp-wrap').style.display = 'none'
+      showSkillDone(data.score, data.all_complete)
+      if (data.all_complete) state.phase = 'all_done'
+    } else {
+      setSend(true)
+    }
+  } catch(e) {
+    hideTyping()
+    appendSys('⚠️ ' + e.message)
+    setSend(true)
+  }
+}
+
+function showSkillDone(score, allDone) {
+  const pct = (score.score/10)*100
+  const col = score.score>=7?'var(--lime)':score.score>=4?'var(--amber)':'var(--coral)'
+  document.getElementById('sk-done-wrap').innerHTML = `
+    <div class="sk-done">
+      <div class="skd-hd">
+        <span class="skd-check">✓</span>
+        <div>
+          <div class="skd-title">${esc(score.skill)} — assessed</div>
+          <div class="skd-rat">${esc(score.rationale||'')}</div>
+        </div>
+      </div>
+      <div class="skd-scores">
+        ${[['Conceptual',score.conceptual_depth],['Practical',score.practical_application],['Recency',score.recency]].map(([l,v])=>`
+          <div class="skd-sc">
+            <div class="skd-sc-lbl">${l}</div>
+            <div class="sc-bar" style="min-width:0"><div class="sc-fill" style="width:${(v/10)*100}%;background:${col}"></div></div>
+            <div class="skd-sc-val">${v.toFixed(1)}</div>
+          </div>`).join('')}
+      </div>
+      ${allDone
+        ? `<button class="next-btn" onclick="goReport()">View Report →</button>`
+        : `<button class="next-btn" onclick="nextSkill()">Next Skill →</button>`
+      }
+    </div>`
+  if (allDone) {
+    document.getElementById('chat-skill-name').textContent = '✅ All Done'
+  }
+}
+
+function nextSkill() {
+  document.getElementById('sk-done-wrap').innerHTML = ''
+  const idx = state.currentSkillIdx
+  if (idx >= state.skillsToAssess.length) { goReport(); return }
+  appendDiv(`── Skill ${idx+1} of ${state.skillsToAssess.length} ──`)
+  state.phase = 'chatting'
+  startSkill()
+}
+
+/* ════════════════════════════════════════════════
+   PAGE 3 — REPORT
+════════════════════════════════════════════════ */
+function goReport() {
+  buildReport()
+  goPage('report')
+  fetchGaps()
+}
+
+function buildReport() {
+  // Heatmap
+  const chips = document.getElementById('heatmap-chips')
+  chips.innerHTML = state.gaps.map(g=>`
+    <div class="chip ${g.status}">
+      <span class="chip-dot"></span>${esc(g.skill)}
+    </div>`).join('')
+
+  const m = state.gaps.filter(g=>g.status==='matched').length
+  const p = state.gaps.filter(g=>g.status==='partial').length
+  const mi= state.gaps.filter(g=>g.status==='missing').length
+  document.getElementById('lg-m').textContent = `${m} Matched`
+  document.getElementById('lg-p').textContent = `${p} Partial`
+  document.getElementById('lg-mi').textContent = `${mi} Missing`
+
+  // Stats
+  document.getElementById('stat-cards').innerHTML = [
+    {ico:'✅',val:m,lbl:'Matched',cls:'s-lime'},
+    {ico:'⚡',val:p,lbl:'Partial',cls:'s-amber'},
+    {ico:'❌',val:mi,lbl:'Missing',cls:'s-coral'},
+    {ico:'📊',val:state.gaps.length,lbl:'Required',cls:'s-teal'},
+  ].map(s=>`
+    <div class="stat ${s.cls}">
+      <div class="stat-ico">${s.ico}</div>
+      <div class="stat-val">${s.val}</div>
+      <div class="stat-lbl">${s.lbl}</div>
+    </div>`).join('')
+
+  // Overview tab
+  const ov = document.getElementById('tab-overview')
+  const groups = [
+    { status:'matched', label:'✅ Matched Skills', cls:'lime' },
+    { status:'partial',  label:'⚡ Partial Matches', cls:'amber' },
+    { status:'missing',  label:'❌ Missing Skills',  cls:'coral' },
+  ]
+  ov.innerHTML = groups.map(g => {
+    const items = state.gaps.filter(x=>x.status===g.status)
+    if (!items.length) return ''
+    return `<div class="ov-group">
+      <div class="ov-gt ${g.cls}">${g.label}</div>
+      <div class="ov-chips">${items.map(x=>`
+        <div class="ov-chip ${g.cls}">
+          ${esc(x.skill)}
+          ${x.claimed_level?`<span class="ov-lvl">${esc(x.claimed_level)}</span>`:''}
+        </div>`).join('')}
+      </div>
+    </div>`
+  }).join('')
+}
+
+async function fetchGaps() {
+  try {
+    const res = await fetch(`${API}/gaps/${state.sessionId}`)
+    if (!res.ok) throw new Error(`${res.status}`)
+    const data = await res.json()
+    renderGaps(data.ranked_gaps || [])
+    fetchPlan(data.ranked_gaps || [])
+  } catch(e) {
+    document.getElementById('gaps-loading').innerHTML = `<div class="empty-st">⚠️ Gap analysis failed: ${esc(e.message)}</div>`
+  }
+}
+
+function renderGaps(gaps) {
+  document.getElementById('gaps-loading').style.display = 'none'
+  const list = document.getElementById('gaps-list')
+  list.style.display = 'flex'
+  if (!gaps.length) { list.innerHTML = '<div class="empty-st">No gap data.</div>'; return }
+  list.innerHTML = gaps.map((g,i)=>`
+    <div class="gap-card">
+      <div class="gap-rank">#${i+1}</div>
+      <div class="gap-body">
+        <div class="gap-top">
+          <div class="gap-skill">${esc(g.skill)}</div>
+          <div class="gap-badge">
+            <span class="gv">${(g.gap_score||0).toFixed(0)}</span>
+            <span class="gl">gap</span>
+          </div>
+        </div>
+        ${g.adjacency_reason?`<p class="gap-reason">${esc(g.adjacency_reason)}</p>`:''}
+        ${g.adjacent_skills?.length?`
+          <div class="adj">
+            <span class="adj-lbl">Leverages:</span>
+            ${g.adjacent_skills.map(s=>`<span class="adj-chip">${esc(s)}</span>`).join('')}
+          </div>`:''}
+        <div class="gap-wks">⏱ ~${g.estimated_weeks||'?'} weeks to proficiency</div>
+      </div>
+    </div>`).join('')
+}
+
+async function fetchPlan(gaps) {
+  try {
+    const res = await fetch(`${API}/plan/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        session_id: state.sessionId,
+        prioritised_gaps: gaps
+      })
+    })
+
+    if (!res.ok) throw new Error(`${res.status}`)
+
+    const data = await res.json()
+
+    console.log("PLAN RESPONSE:", data)
+
+    // 🔥 HANDLE ALL POSSIBLE SHAPES
+    let plans = []
+
+    if (Array.isArray(data.plan)) {
+      plans = data.plan
+    } else if (Array.isArray(data.plans)) {
+      plans = data.plans
+    } else if (Array.isArray(data.plan?.plan)) {
+      plans = data.plan.plan
+    } else {
+      console.error("Invalid plan format:", data)
+    }
+
+    console.log("FINAL PLANS:", plans)
+
+    renderPlan(plans)
+
+  } catch (e) {
+    document.getElementById('plan-loading').innerHTML =
+      `<div class="empty-st">⚠️ Plan failed: ${esc(e.message)}</div>`
+  }
+}
+
+
+function renderPlan(plans) {
+  const list = document.getElementById('plan-list')
+  const loading = document.getElementById('plan-loading')
+
+  loading.style.display = 'none'
+  list.style.display = 'flex'
+
+  // 🔥 SAFETY CHECK
+  if (!Array.isArray(plans) || plans.length === 0) {
+    list.innerHTML = '<div class="empty-st">No plan data.</div>'
+    return
+  }
+
+  list.innerHTML = plans.map(p => {
+
+    const stages = Array.isArray(p.stages) ? p.stages : []
+
+    // ✅ CALCULATE TOTAL WEEKS
+    const totalWeeks = stages.reduce(
+      (sum, s) => sum + (s.estimated_weeks || 0),
+      0
+    )
+
+    return `
+      <div class="psb">
+
+        <div class="psb-hd">
+          <div class="psb-skill">${esc(p.skill || "Unknown")}</div>
+          <div class="psb-wks">${totalWeeks || '?'} weeks total</div>
+        </div>
+
+        <div class="stages">
+
+          ${stages.map((s, si) => `
+            <div class="stage">
+
+              <div class="stage-tag">
+                <span class="stage-n">${si + 1}</span>
+                <span class="stage-name">${esc(s.name)}</span>
+                <span class="stage-wks">${s.estimated_weeks || 0}w</span>
+              </div>
+
+              <div class="stage-goal">
+                ${esc(s.goal)}
+              </div>
+
+              <div class="milestone">
+                <span>🏁</span> ${esc(s.milestone)}
+              </div>
+
+              <div class="resources">
+                ${(s.resources || []).map(r => `
+                  <a class="res" href="${esc(r.url)}" target="_blank" rel="noopener">
+                    <span class="res-type">${esc(r.type)}</span>
+                    <span class="res-title">${esc(r.title)}</span>
+                    <span class="res-meta">
+                      ${esc(r.duration)}${r.free ? ' · Free' : ' · Paid'}
+                    </span>
+                    <span class="res-arr">↗</span>
+                  </a>
+                `).join('')}
+              </div>
+
+            </div>
+          `).join('')}
+
+        </div>
+      </div>
+    `
+  }).join('')
+}
+
+function switchRepTab(name, btn) {
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'))
+  document.querySelectorAll('.tnb').forEach(b=>b.classList.remove('active'))
+  document.getElementById('tab-'+name).classList.add('active')
+  btn.classList.add('active')
+}
+
+/* ════════════════════════════════════════════════
+   CHAT HELPERS
+════════════════════════════════════════════════ */
+function appendMsg(role, text) {
+  clearEmpty()
+  const wrap = document.getElementById('chat-msgs')
+  const div = document.createElement('div')
+  div.className = `msg ${role}`
+  const av = role==='assistant' ? '⬡' : '👤'
+  const label = role==='assistant' ? 'Catalyst' : 'You'
+  div.innerHTML = `
+    <div class="msg-av">${av}</div>
+    <div class="msg-body">
+      <div class="msg-role">${label}</div>
+      <div class="msg-txt">${esc(text)}</div>
+    </div>`
+  wrap.appendChild(div)
+  wrap.scrollTop = wrap.scrollHeight
+}
+
+function appendSys(text) {
+  const wrap = document.getElementById('chat-msgs')
+  const div = document.createElement('div')
+  div.className = 'chat-sys fi'
+  div.textContent = text
+  wrap.appendChild(div)
+  wrap.scrollTop = wrap.scrollHeight
+}
+
+function appendDiv(text) {
+  const wrap = document.getElementById('chat-msgs')
+  const div = document.createElement('div')
+  div.className = 'chat-div'
+  div.textContent = text
+  wrap.appendChild(div)
+  wrap.scrollTop = wrap.scrollHeight
+}
+
+let typingEl = null
+function showTyping() {
+  clearEmpty()
+  const wrap = document.getElementById('chat-msgs')
+  typingEl = document.createElement('div')
+  typingEl.className = 'typing'
+  typingEl.innerHTML = '<span></span><span></span><span></span>'
+  wrap.appendChild(typingEl)
+  wrap.scrollTop = wrap.scrollHeight
+}
+function hideTyping() { if (typingEl) { typingEl.remove(); typingEl = null } }
+
+function clearEmpty() {
+  const e = document.getElementById('chat-empty')
+  if (e) e.remove()
+}
+
+function setSend(enabled) {
+  const btn = document.getElementById('send-btn')
+  btn.className = 'send' + (enabled?'':' off')
+  if (enabled) btn.innerHTML = '↑'
+  else btn.innerHTML = '<span class="spin-sm"></span>'
+}
+
+/* ════════════════════════════════════════════════
+   UTILS
+════════════════════════════════════════════════ */
+function esc(s) {
+  if (!s) return ''
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/\n/g,'<br>')
+}
+</script>
+</body>
+</html>
